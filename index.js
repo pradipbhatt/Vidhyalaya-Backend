@@ -32,7 +32,7 @@ app.use((err, req, res, next) => {
 // Route to handle root URL GET requests
 app.get("/", async (req, res) => {
   res.status(200).json({
-    message: "Hello developers from Royal Vyamsala",
+    message: "Hello developers from Vidhyalaya",
   });
 });
 
