@@ -1,62 +1,59 @@
 // Importing required modules
-import express from "express"; // Importing Express framework for creating server and handling routes
-import * as dotenv from "dotenv"; // Importing dotenv to load environment variables from a .env file
-import cors from "cors"; // Importing CORS to handle Cross-Origin Resource Sharing
-import mongoose from "mongoose"; // Importing Mongoose for MongoDB object modeling
-import UserRoutes from "./routes/User.js"; // Importing user routes from a separate file
-import PostRoutes from "./routes/Post.js"
+import express from 'express';
+import dotenv from 'dotenv';
+import cors from 'cors';
+import mongoose from 'mongoose';
+import UserRoutes from './routes/User.js';
+import PostRoutes from './routes/Post.js';
+import PostSchoolRoutes from './routes/PostSchool.js'; // Importing PostSchool routes
 
-dotenv.config(); // Load environment variables from .env file into process.env
+dotenv.config(); // Load environment variables from .env file
 
-const app = express(); // Create an instance of Express application
+const app = express(); // Initialize Express application
 
-app.use(cors()); // Enable CORS for all requests
-app.use(express.json({ limit: "50mb" })); // Middleware to parse incoming JSON requests, setting limit to 50mb
-app.use(express.urlencoded({ extended: true })); // Middleware to parse URL-encoded data (form data), extended: true allows for rich objects and arrays
+app.use(cors()); // Enable Cross-Origin Resource Sharing
+app.use(express.json({ limit: '50mb' })); // Middleware to parse JSON requests
+app.use(express.urlencoded({ extended: true })); // Middleware to parse URL-encoded requests
 
-// Use user routes for all requests starting with /api/user/
-app.use("/api/user/", UserRoutes);
-app.use("/api/post/",PostRoutes);
+// Define routes
+app.use('/api/user', UserRoutes); // Define route for User API
+app.use('/api/post', PostRoutes); // Define route for Post API
+app.use('/api/postschool', PostSchoolRoutes); // Define route for PostSchool API
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-  const status = err.status || 500; // Set status to error status or default to 500
-  const message = err.message || "Something went wrong"; // Set message to error message or default to "Something went wrong"
-  return res.status(status).json({ // Send JSON response with error details
+  const status = err.status || 500;
+  const message = err.message || 'Something went wrong';
+  res.status(status).json({
     success: false,
     status,
     message,
   });
 });
 
-// Route to handle root URL GET requests
-app.get("/", async (req, res) => {
+app.get('/', (req, res) => {
   res.status(200).json({
-    message: "Hello developers from Vidhyalaya",
+    message: 'Hello developers from Vidhyalaya',
   });
 });
 
-// Function to connect to MongoDB
-const connectDB = () => {
-  mongoose.set("strictQuery", true); // Set Mongoose to use strict query mode
-  mongoose
-    .connect(process.env.MONGODB_URL) // Connect to MongoDB using URL from environment variable
-    .then(() => console.log("Connected to Mongo DB Atlas Changed !!")) // Log success message if connection is successful
-    .catch((err) => {
-      console.error("Failed to connect with Mongo"); // Log failure message if connection fails
-      console.error(err); // Log the error details
-    });
-};
-
-// Function to start the server
-const startServer = async () => {
+const connectDB = async () => {
   try {
-    connectDB(); // Connect to the database
-    app.listen(8080, () => console.log("Server started on port 8080")); // Start the server on port 8080 and log message
-  } catch (error) {
-    console.log(error); // Log any errors that occur during server start
+    mongoose.set('strictQuery', true);
+    await mongoose.connect(process.env.MONGODB_URL);
+    console.log('Connected to MongoDB Atlas');
+  } catch (err) {
+    console.error('Failed to connect to MongoDB', err);
   }
 };
 
-// Start the server
+const startServer = async () => {
+  try {
+    await connectDB(); // Connect to the database
+    app.listen(8080, () => console.log('Server started on port 8080'));
+  } catch (error) {
+    console.error('Error starting server', error);
+  }
+};
+
 startServer();
