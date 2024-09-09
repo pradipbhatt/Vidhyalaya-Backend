@@ -1,64 +1,27 @@
 import express from 'express';
-import PostSchool from '../models/PostSchool.js';
+import {
+  createPostSchool,
+  getPostSchools,
+  getPostSchoolById,
+  updatePostSchool,
+  deletePostSchool
+} from '../controllers/PostSchoolController.js'; // Import controller functions
 
 const router = express.Router();
 
 // Create a new post school
-router.post('/', async (req, res) => {
-  try {
-    const {
-      title,
-      prices,
-      description,
-      infrastructure,
-      contact,
-      location,
-      courses,
-      rank,
-      alumniTotal,
-      alumniEngineers,
-      alumniDoctors,
-      teachers,
-      teacherQualifications,
-      passoutRate,
-      image,
-      showMoreUrl
-    } = req.body;
-
-    const newPostSchool = new PostSchool({
-      title,
-      prices,
-      description,
-      infrastructure,
-      contact,
-      location,
-      courses,
-      rank,
-      alumniTotal,
-      alumniEngineers,
-      alumniDoctors,
-      teachers,
-      teacherQualifications,
-      passoutRate,
-      image,
-      showMoreUrl
-    });
-
-    const savedPostSchool = await newPostSchool.save();
-    res.status(201).json(savedPostSchool);
-  } catch (error) {
-    res.status(500).json({ message: 'Failed to create post school', error });
-  }
-});
+router.post('/', createPostSchool);
 
 // Get all post schools
-router.get('/', async (req, res) => {
-  try {
-    const postSchools = await PostSchool.find();
-    res.status(200).json(postSchools);
-  } catch (error) {
-    res.status(500).json({ message: 'Failed to fetch post schools', error });
-  }
-});
+router.get('/', getPostSchools);
+
+// Get a single post school by ID
+router.get('/:id', getPostSchoolById);
+
+// Update a post school by ID
+router.put('/:id', updatePostSchool);
+
+// Delete a post school by ID
+router.delete('/:id', deletePostSchool);
 
 export default router;

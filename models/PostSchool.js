@@ -1,21 +1,21 @@
 import mongoose from 'mongoose';
 
-const postSchoolSchema = new mongoose.Schema({
+const PostSchoolSchema = new mongoose.Schema({
   title: { type: String, required: true },
   prices: {
-    class11: { type: Number, required: true },
-    class12: { type: Number, required: true }
+    class11: { type: String, required: true },
+    class12: { type: String, required: true }
   },
-  description: { type: String, required: true },
+  description: { type: String },
   infrastructure: { type: String },
   contact: {
     phone: { type: String, required: true }
   },
   location: {
-    lat: { type: Number, required: true },
-    lng: { type: Number, required: true }
+    lng: { type: Number, required: true },
+    lat: { type: Number, required: true }
   },
-  courses: { type: String },
+  courses: { type: [String] }, // Change from string to array of strings
   rank: { type: Number },
   alumniTotal: { type: Number },
   alumniEngineers: { type: Number },
@@ -27,6 +27,6 @@ const postSchoolSchema = new mongoose.Schema({
   showMoreUrl: { type: String }
 });
 
-const PostSchool = mongoose.model('PostSchool', postSchoolSchema);
+const PostSchool = mongoose.model('PostSchool', PostSchoolSchema);
 
 export default PostSchool;
