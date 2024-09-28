@@ -1,4 +1,5 @@
-import PostSchool from '../models/PostSchool.js';
+
+import PostSchool from '../model/PostSchool.js';
 
 // Create a new post school
 export const createPostSchool = async (req, res) => {

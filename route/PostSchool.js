@@ -5,7 +5,7 @@ import {
   getPostSchoolById,
   updatePostSchool,
   deletePostSchool
-} from '../controllers/PostSchoolController.js'; // Import controller functions
+} from '../controller/PostSchoolController.js'; // Import controller functions
 
 const router = express.Router();
 
@@ -25,3 +25,4 @@ router.put('/:id', updatePostSchool);
 router.delete('/:id', deletePostSchool);
 
 export default router;
+// tested successfully
