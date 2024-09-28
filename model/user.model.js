@@ -1,7 +1,7 @@
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
 
-// Define the User schema
-const userSchema = mongoose.Schema({
+// User schema
+const userSchema = new mongoose.Schema({
     fullname: {
         type: String,
         required: true,
@@ -10,7 +10,6 @@ const userSchema = mongoose.Schema({
         type: String,
         required: true,
         unique: true,
-        match: [/\S+@fwu\.edu\.np$/, 'Email must end with @fwu.edu.np'], // Validate email format
     },
     password: {
         type: String,
@@ -21,17 +20,16 @@ const userSchema = mongoose.Schema({
         required: true,
         unique: true,
     },
+    userImage: {
+        type: String,
+        default: '',
+    },
     isAdmin: {
         type: Boolean,
-        default: false,
-    },
-    userImage: {
-        type: String, // URL of the user's image
-        default: 'https://www.pngkey.com/png/full/114-1149878_setting-user-avatar-in-specific-size-without-breaking.png' 
+        default: false,  // Regular user by default
     }
+}, {
+    timestamps: true,  // Automatically adds createdAt and updatedAt fields
 });
 
-// Create the User model
-const User = mongoose.model("User", userSchema);
-
-export default User;
+export default mongoose.model('User', userSchema);

@@ -1,15 +1,24 @@
 import User from "../model/user.model.js";
 import bcryptjs from "bcryptjs";
+import jwt from "jsonwebtoken";
 
-// Signup controller to create a new user (admin only)
+// Helper function to generate a token
+const generateToken = (user) => {
+    return jwt.sign(
+        {
+            id: user._id,
+            email: user.email,
+            isAdmin: user.isAdmin,
+        },
+        process.env.JWT_SECRET,
+        { expiresIn: "1d" }
+    );
+};
+
+// Signup - anyone can register
 export const signup = async (req, res) => {
     try {
         const { fullname, email, password, registrationNumber, userImage } = req.body;
-
-        const emailRegex = /\S+@fwu\.edu\.np$/;
-        if (!emailRegex.test(email)) {
-            return res.status(400).json({ message: "Email must end with @fwu.edu.np" });
-        }
 
         const existingUser = await User.findOne({ $or: [{ email }, { registrationNumber }] });
         if (existingUser) {
@@ -17,16 +26,19 @@ export const signup = async (req, res) => {
         }
 
         const hashPassword = await bcryptjs.hash(password, 10);
+
         const createdUser = new User({
             fullname,
             email,
             password: hashPassword,
             registrationNumber,
-            isAdmin: false,
             userImage: userImage || '',
         });
 
         await createdUser.save();
+
+        // Generate a token after signup
+        const token = generateToken(createdUser);
 
         res.status(201).json({
             message: "User created successfully",
@@ -38,6 +50,7 @@ export const signup = async (req, res) => {
                 isAdmin: createdUser.isAdmin,
                 userImage: createdUser.userImage,
             },
+            token,
         });
     } catch (error) {
         console.error("Error: " + error.message);
@@ -45,7 +58,7 @@ export const signup = async (req, res) => {
     }
 };
 
-// Login controller to authenticate a user
+// Login - existing users
 export const login = async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -60,6 +73,9 @@ export const login = async (req, res) => {
             return res.status(400).json({ message: "Invalid email or password" });
         }
 
+        // Generate a token after login
+        const token = generateToken(user);
+
         res.status(200).json({
             message: "Login successful",
             user: {
@@ -70,6 +86,7 @@ export const login = async (req, res) => {
                 isAdmin: user.isAdmin,
                 userImage: user.userImage,
             },
+            token,
         });
     } catch (error) {
         console.error("Error: " + error.message);
@@ -77,9 +94,13 @@ export const login = async (req, res) => {
     }
 };
 
-// Controller to get all users (admin only)
+// Get all users - admin access
 export const getUsers = async (req, res) => {
     try {
+        if (!req.user.isAdmin) {
+            return res.status(403).json({ message: "Access denied" });
+        }
+
         const users = await User.find({});
         res.status(200).json(users);
     } catch (error) {
@@ -88,11 +109,10 @@ export const getUsers = async (req, res) => {
     }
 };
 
-// Controller to get user details by ID
+// Get user details by ID
 export const getUserDetails = async (req, res) => {
     try {
         const userId = req.params.id;
-
         const user = await User.findById(userId).select('-password');
 
         if (!user) {
@@ -115,50 +135,30 @@ export const getUserDetails = async (req, res) => {
     }
 };
 
-// Delete controller to remove a user (admin only)
-export const deleteUser = async (req, res) => {
-    try {
-        const userId = req.params.id;
-
-        const user = await User.findByIdAndDelete(userId);
-
-        if (!user) {
-            return res.status(404).json({ message: "User not found" });
-        }
-
-        res.status(200).json({ message: "User deleted successfully" });
-    } catch (error) {
-        console.error("Error: " + error.message);
-        res.status(500).json({ message: "Internal server error" });
-    }
-};
-
-// Controller to update user details (admin only)
+// Update user - admin access or user can update own profile
 export const updateUser = async (req, res) => {
     try {
-        const userId = req.params.id; // User ID from route parameter
+        const userId = req.params.id;
         const { fullname, email, password, registrationNumber, isAdmin, userImage } = req.body;
 
-        // Validate email format
-        const emailRegex = /\S+@fwu\.edu\.np$/;
-        if (email && !emailRegex.test(email)) {
-            return res.status(400).json({ message: "Email must end with @fwu.edu.np" });
+        // Check if the user is admin or updating their own profile
+        if (req.user._id !== userId && !req.user.isAdmin) {
+            return res.status(403).json({ message: "Access denied" });
         }
 
-        // Find the user by ID
         const user = await User.findById(userId);
 
         if (!user) {
             return res.status(404).json({ message: "User not found" });
         }
 
-        // Update fields
+        // Update fields if provided
         if (fullname) user.fullname = fullname;
         if (email) user.email = email;
         if (registrationNumber) user.registrationNumber = registrationNumber;
-        if (password) user.password = await bcryptjs.hash(password, 10); // Hash the new password
-        if (isAdmin !== undefined) user.isAdmin = isAdmin; // Ensure isAdmin is set only if provided
-        if (userImage) user.userImage = userImage; // Update user image
+        if (password) user.password = await bcryptjs.hash(password, 10);
+        if (userImage) user.userImage = userImage;
+        if (typeof isAdmin !== 'undefined' && req.user.isAdmin) user.isAdmin = isAdmin;
 
         await user.save();
 
@@ -173,6 +173,28 @@ export const updateUser = async (req, res) => {
                 userImage: user.userImage,
             },
         });
+    } catch (error) {
+        console.error("Error: " + error.message);
+        res.status(500).json({ message: "Internal server error" });
+    }
+};
+
+// Delete user - admin access only
+export const deleteUser = async (req, res) => {
+    try {
+        if (!req.user.isAdmin) {
+            return res.status(403).json({ message: "Access denied" });
+        }
+
+        const userId = req.params.id;
+
+        const user = await User.findByIdAndDelete(userId);
+
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        res.status(200).json({ message: "User deleted successfully" });
     } catch (error) {
         console.error("Error: " + error.message);
         res.status(500).json({ message: "Internal server error" });
